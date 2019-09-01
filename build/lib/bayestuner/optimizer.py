@@ -10,8 +10,8 @@ class OptimizerResult():
     def __init__(self,func_val,x,past_hyper,past_evals):
         self.func_val   = func_val
         self.x          = x
-        self.PastEvals = past_hyper
-        self.Scores = past_evals
+        self.PastEvals  = past_hyper
+        self.Scores     = past_evals
 
 
     def __str__(self):
@@ -23,13 +23,13 @@ class OptimizerResult():
 
 class Optimizer(ABC):
     @abstractmethod
-    def optimize(self,acquisition,gp,bounds,past_evals):
+    def optimize(self,acquisition,gp,domain,past_evals):
         pass
 
 
 class DifferentialEvolution(Optimizer):
-    def optimize(self,acquisition,gp,bounds,past_evals):
-        extracted_bounds = [bound.interval for bound in bounds.bounds]
+    def optimize(self,acquisition,gp,domain,past_evals):
+        extracted_bounds = list(map(lambda x : [x[0],x[1]],domain.bounds))
         def min_surrogate(x):
             return -acquisition.eval(x,gp,past_evals)
         return differential_evolution(min_surrogate,extracted_bounds).x
@@ -37,8 +37,8 @@ class DifferentialEvolution(Optimizer):
 
 
 class LocalOptimizer(Optimizer):
-    def optimize(self,acquisition,gp,bounds,past_evals):
-        extracted_bounds = [bound.interval for bound in bounds.bounds]
+    def optimize(self,acquisition,gp,domain,past_evals):
+        extracted_bounds = list(map(lambda x : [x[0],x[1]],domain.bounds))
         next_loc   = None
         min_surrog = math.inf
         def min_surrogate(x):

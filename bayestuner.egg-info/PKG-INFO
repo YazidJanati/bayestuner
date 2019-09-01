@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: bayestuner
-Version: 1.0.0
+Version: 1.0.2
 Summary: A Bayesian Optimization Package
 Home-page: https://github.com/yazidjanati/bayestuner
 Author: Yazid Janati El Idrissi

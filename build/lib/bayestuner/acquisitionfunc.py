@@ -5,9 +5,11 @@ from scipy.stats import norm
 
 
 class AcquisitionFunc(ABC) :
-    @abstractmethod
-    def __init__(self,i,temperature):
+
+    def __init__(self,i):
         pass
+
+    @abstractmethod
     def eval(self,curr_loc,gp,past_evals):
         pass
 
@@ -20,12 +22,11 @@ class UCB(AcquisitionFunc):
     def eval(self,curr_loc,gp,past_evals):
         #pay attention to the shape of curr_loc
         m,s = gp.predict(curr_loc.reshape(1,-1),return_std = True)
-        return m[0] - self.temperature(self.i) * s[0]
+        return m[0] + self.temperature(self.i) * s[0]
 
 class EI(AcquisitionFunc):
-    def __init__(self,i,temperature):
+    def __init__(self,i):
         self.i = i
-        self.temperature = None
 
     def eval(self,curr_loc,gp,past_evals):
         #put the right shape to curr_loc beforehand

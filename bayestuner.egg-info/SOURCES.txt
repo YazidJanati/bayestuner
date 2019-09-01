@@ -6,6 +6,7 @@ bayestuner/benchmark_functions.py
 bayestuner/bounds.py
 bayestuner/chooser.py
 bayestuner/optimizer.py
+bayestuner/tests.py
 bayestuner/tuner.py
 bayestuner.egg-info/PKG-INFO
 bayestuner.egg-info/SOURCES.txt

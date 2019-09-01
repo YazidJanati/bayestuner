@@ -6,27 +6,42 @@ from .optimizer import DifferentialEvolution,LocalOptimizer, OptimizerResult
 from .chooser import BasicChooser
 import seaborn as sns
 import matplotlib.pyplot as plt
-from .bounds import Bound,Bounds
+from .bounds import Domain
 import math
 
 class BayesTuner :
+    '''
+    BayesTuner is the main component of the Bayesian Optimization algorithm.
+
+    * Parameters:
+
+    ** objective: ndarray -> double
+
+    ** bounds: List[Bound]:
+    The domain on which the objective is optimized. It must be a list of Bound
+    objects, with each Bound
+
+
+
+
+    '''
     def __init__(self,
                  objective,
                  bounds,
                  n_iter,
                  init_samples,
                  optimizer = LocalOptimizer(),
-                 acquisition = lambda i : UCB(i, lambda x : np.sqrt(x))  ,
+                 acquisition = lambda i : UCB(i, lambda x : np.log(x))  ,
                  chooser = BasicChooser(),
                  kernel = ConstantKernel(1.0)*Matern(nu = 2.5),
                  alpha = 1e-2,
                  n_restarts = 5):
 
-        self.bounds       =   Bounds(bounds)
+        self.domain       =   Domain(bounds)
         self.objective    =   objective
         self.n_iter       =   n_iter
         self.init_samples =   init_samples
-        self.past_hyper   =   self.bounds.generate_samples(self.init_samples)
+        self.past_hyper   =   self.domain.genSamples(self.init_samples)
         self.past_evals   =   np.array([objective(x) for x in self.past_hyper]).reshape(-1,1)
         self.optimizer    =   optimizer
         self.acquisition  =   acquisition
@@ -42,11 +57,11 @@ class BayesTuner :
                                       normalize_y = True)
         idx_best_yet = np.argmax(self.past_evals)
         best_yet     = self.past_evals[idx_best_yet]
-        for i in range(self.n_iter):
+        for i in range(1,self.n_iter):
             next_eval = self.chooser.choose(self.acquisition(i),
                                 self.optimizer,
                                 gp,
-                                self.bounds,
+                                self.domain,
                                 self.past_evals,
                                 self.n_restarts)
             score_next_eval = self.objective(next_eval)
@@ -54,7 +69,8 @@ class BayesTuner :
                 best_yet = score_next_eval
                 idx_best_yet = i
             if print_score == True:
-                print(f"{i} / {self.n_iter} | current eval : {next_eval} / score : {score_next_eval} |\n -> best score yet: {best_yet}")
+                print(f"{i} / {self.n_iter} | current eval : {next_eval} / score : {score_next_eval} |\n \
+-> best score yet: {best_yet} \n")
             self.past_hyper = np.vstack((self.past_hyper,next_eval))
             self.past_evals = np.vstack((self.past_evals,score_next_eval))
             gp.fit(self.past_hyper,self.past_evals)
@@ -65,7 +81,7 @@ class BayesTuner :
         return result
 
 
-    def plot_progress(self):
+    '''def plot_progress(self):
         sns.set_style("darkgrid")
         if len(self.bounds.bounds) > 1:
             raise ValueError("Can't plot for dimensions > 1")
@@ -98,4 +114,4 @@ class BayesTuner :
             self.past_hyper = np.vstack((self.past_hyper,next_eval))
             self.past_evals = np.vstack((self.past_evals,obj_val))
             gp.fit(self.past_hyper,self.past_evals)
-        plt.show()
+        plt.show()'''
