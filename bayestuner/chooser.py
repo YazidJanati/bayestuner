@@ -29,7 +29,7 @@ class Chooser(ABC):
         pass
 
 
-class BasicChooser(Chooser):
+class MaxAcquisition(Chooser):
     def choose(self,acquisition,
                     optimizer,
                     gp,

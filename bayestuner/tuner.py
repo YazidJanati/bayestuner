@@ -1,29 +1,71 @@
 import numpy as np
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern
 from sklearn.gaussian_process import GaussianProcessRegressor
-from .acquisitionfunc import UCB, EI
-from .optimizer import DifferentialEvolution,LocalOptimizer, OptimizerResult
-from .chooser import BasicChooser
+from acquisitionfunc import UCB, EI
+from optimizer import DifferentialEvolution,LocalOptimizer, OptimizerResult
+from chooser import MaxAcquisition
 import seaborn as sns
 import matplotlib.pyplot as plt
-from .bounds import Domain
+from bounds import Domain
+from initialization import Normal,Uniform
 import math
 
 class BayesTuner :
     '''
-    BayesTuner is the main component of the Bayesian Optimization algorithm.
+    BayesTuner is the main component of ....
 
-    * Parameters:
+    Parameters
+    ----------
+    objective : function
+        Real valued function to maximize.
 
-    ** objective: ndarray -> double
+    bounds : list
+        List of tuples. Each tuple specifies a dimension of the input space.
+        A dimension in characterized by : lower bound, upper bound, type.
+        Type is either 'continuous' if the restriction of the input space to the
+        dimension is a continuous domain, or 'discrete'. discrete means a set of
+        integers spanning [lower bound, upper bound].
+        e.g. : [(-10,12,'continuous'),(2,10,'discrete')] if the objective has both
+        continuous and discrete hyperparameters.
+        Note that if the hyperparameters are discrete but not integers, you can
+        always transform them to integers.
 
-    ** bounds: List[Bound]:
-    The domain on which the objective is optimized. It must be a list of Bound
-    objects, with each Bound
+    n_iter : int
+        Number of iterations.
 
+    init_samples : int
+        Onitial number of samples to use for the fitting of the gaussian process.
 
+    optimizer : Optimizer, optional
+        Optimizer to use for the maximization of the surrogate model.
+        Available optimizers: 'L-BFGS-B' or 'DifferentialEvolution'
 
+    acquisition : AcquisitionFunc, optional
+        The surrogate model.
+        Available surrogates: 'Upper Confidence Bound' or 'ExpectedImprovement'.
+        Default is 'Upper Confidence Bound' with beta_t = sqrt(log(t)).
 
+    chooser : Chooser, optional
+        The way you choose the next point where you evaluate the objective.
+        The default chooser is the one that chooses the maximum of the surrogate.
+
+    initialization : Initialization, optional
+        The way you want to sample the initial points.
+        Default is using the gaussian distribution.
+
+    kernel : Kernel, optional
+        The kernel to use for the gaussian process regression.
+        Default is ConstantKernel * Matern(nu = 2.5)
+
+    alpha : float, optional
+        Value added to the diagonal of the kernel matrix during fitting.
+        Larger values correspond to increased noise level in the observations.
+        This can also prevent a potential numerical issue during fitting, by
+        ensuring that the calculated values form a positive definite matrix.
+        Default : 1e-5.
+
+    n_restarts : int, optional
+        Number of restarts of the surrogate optimizer. Default : 5.
     '''
     def __init__(self,
                  objective,
@@ -31,17 +73,18 @@ class BayesTuner :
                  n_iter,
                  init_samples,
                  optimizer = LocalOptimizer(),
-                 acquisition = lambda i : UCB(i, lambda x : np.log(x))  ,
-                 chooser = BasicChooser(),
+                 acquisition = lambda i : UCB(i, lambda x : np.log(x)),
+                 chooser = MaxAcquisition(),
+                 initialization = Uniform(),
                  kernel = ConstantKernel(1.0)*Matern(nu = 2.5),
-                 alpha = 1e-2,
+                 alpha = 1e-5,
                  n_restarts = 5):
 
         self.domain       =   Domain(bounds)
         self.objective    =   objective
         self.n_iter       =   n_iter
         self.init_samples =   init_samples
-        self.past_hyper   =   self.domain.genSamples(self.init_samples)
+        self.past_hyper   =   initialization.generate(self.domain,init_samples)
         self.past_evals   =   np.array([objective(x) for x in self.past_hyper]).reshape(-1,1)
         self.optimizer    =   optimizer
         self.acquisition  =   acquisition
@@ -50,7 +93,7 @@ class BayesTuner :
         self.alpha        =   alpha
         self.n_restarts   =   n_restarts
 
-    def tune(self,print_score = False):
+    def tune(self,verbose = False):
         gp = GaussianProcessRegressor(kernel = self.kernel,
                                       alpha = self.alpha,
                                       n_restarts_optimizer = self.n_restarts,
@@ -68,7 +111,7 @@ class BayesTuner :
             if score_next_eval >= best_yet:
                 best_yet = score_next_eval
                 idx_best_yet = i
-            if print_score == True:
+            if verbose == True:
                 print(f"{i} / {self.n_iter} | current eval : {next_eval} / score : {score_next_eval} |\n \
 -> best score yet: {best_yet} \n")
             self.past_hyper = np.vstack((self.past_hyper,next_eval))

@@ -36,7 +36,7 @@ class DifferentialEvolution(Optimizer):
 
 
 
-class LocalOptimizer(Optimizer):
+class LBFGSB(Optimizer):
     def optimize(self,acquisition,gp,domain,past_evals):
         extracted_bounds = list(map(lambda x : [x[0],x[1]],domain.bounds))
         next_loc   = None
