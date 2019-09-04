@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern
 from sklearn.gaussian_process import GaussianProcessRegressor
 from acquisitionfunc import UCB, EI
-from optimizer import DifferentialEvolution,LocalOptimizer, OptimizerResult
+from optimizer import DifferentialEvolution,LBFGSB, OptimizerResult
 from chooser import MaxAcquisition
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -14,12 +14,14 @@ class BayesTuner :
     '''
     BayesTuner is the main component of ....
 
-    Parameters
+    Attributes
     ----------
+
     objective : function
         Real valued function to maximize.
 
     bounds : list
+        size : n_features.
         List of tuples. Each tuple specifies a dimension of the input space.
         A dimension in characterized by : lower bound, upper bound, type.
         Type is either 'continuous' if the restriction of the input space to the
@@ -66,19 +68,96 @@ class BayesTuner :
 
     n_restarts : int, optional
         Number of restarts of the surrogate optimizer. Default : 5.
+
+
+    Methods
+    -------
+
+    tune(verbose = True)
+        Optimizes the objective using Bayesian Optimization.
+
     '''
     def __init__(self,
                  objective,
                  bounds,
                  n_iter,
                  init_samples,
-                 optimizer = LocalOptimizer(),
+                 optimizer = LBFGSB(),
                  acquisition = lambda i : UCB(i, lambda x : np.log(x)),
                  chooser = MaxAcquisition(),
                  initialization = Uniform(),
                  kernel = ConstantKernel(1.0)*Matern(nu = 2.5),
                  alpha = 1e-5,
                  n_restarts = 5):
+        """
+        Attributes
+        ----------
+
+        domain : Domain
+            A description of the input space.
+
+        objective : function
+            Real valued function to maximize.
+
+        bounds : list
+            List of tuples. Each tuple specifies a dimension of the input space.
+            A dimension in characterized by : lower bound, upper bound, type.
+            Type is either 'continuous' if the restriction of the input space to the
+            dimension is a continuous domain, or 'discrete'. discrete means a set of
+            integers spanning [lower bound, upper bound].
+            e.g. : [(-10,12,'continuous'),(2,10,'discrete')] if the objective has both
+            continuous and discrete hyperparameters.
+            Note that if the hyperparameters are discrete but not integers, you can
+            always transform them to integers.
+
+        n_iter : int
+            Number of iterations.
+
+        init_samples : int
+            Onitial number of samples to use for the fitting of the gaussian process.
+
+        past_hyper : numpy.ndarray
+            initial shape : (init_samples,n_features)
+            Contains all the points visited throughout the bayesian optimization of
+            the objective. It initially contains the first sampled points.
+
+        past_evals : numpy.ndarray
+            initial shape : (init_samples,1)
+            Contains the images of the points visited throughout the bayesian
+            optimization of the objective. Initially contains the images of the first
+            sampled points.
+
+        optimizer : Optimizer, optional
+            Optimizer to use for the maximization of the surrogate model.
+            Available optimizers: 'L-BFGS-B' or 'DifferentialEvolution'
+
+        acquisition : AcquisitionFunc, optional
+            The surrogate model.
+            Available surrogates: 'Upper Confidence Bound' or 'ExpectedImprovement'.
+            Default is 'Upper Confidence Bound' with beta_t = sqrt(log(t)).
+
+        chooser : Chooser, optional
+            The way you choose the next point where you evaluate the objective.
+            The default chooser is the one that chooses the maximum of the surrogate.
+
+        initialization : Initialization, optional
+            The way you want to sample the initial points.
+            Default is using the gaussian distribution.
+
+        kernel : Kernel, optional
+            The kernel to use for the gaussian process regression.
+            Default is ConstantKernel * Matern(nu = 2.5)
+
+        alpha : float, optional
+            Value added to the diagonal of the kernel matrix during fitting.
+            Larger values correspond to increased noise level in the observations.
+            This can also prevent a potential numerical issue during fitting, by
+            ensuring that the calculated values form a positive definite matrix.
+            Default : 1e-5.
+
+        n_restarts : int, optional
+            Number of restarts of the surrogate optimizer. Default : 5.
+        """
 
         self.domain       =   Domain(bounds)
         self.objective    =   objective
@@ -94,6 +173,26 @@ class BayesTuner :
         self.n_restarts   =   n_restarts
 
     def tune(self,verbose = False):
+        """
+        Performs a bayesian optimization of the objective function.
+
+        Parameters
+        ----------
+
+        verbose : bool, optional
+            whether to print the current iteration, the chosen point, its image
+            and the best point / image found yet.
+
+        Returns
+        -------
+
+        OptimizerResult
+            Object that contains relevant information about the optimization.
+            OptimizerResult.x to get the argmax
+            OptimizerResult.func_val to get the value of the maximum found.
+            OptimizerResult.PastEvals to get the visited points.
+            OptimizerResult.Scores to get the values of the visited points.
+        """
         gp = GaussianProcessRegressor(kernel = self.kernel,
                                       alpha = self.alpha,
                                       n_restarts_optimizer = self.n_restarts,

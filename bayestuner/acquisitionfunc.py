@@ -5,7 +5,7 @@ from scipy.stats import norm
 
 
 class AcquisitionFunc(ABC) :
-
+    '""""""'
     def __init__(self,i):
         pass
 
