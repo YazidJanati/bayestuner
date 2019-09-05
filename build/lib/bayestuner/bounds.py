@@ -1,42 +1,57 @@
 import numpy as np
 
-'''class Bound:
-    def __init__(self,interval,type):
-        if not isinstance(interval,list):
-            raise TypeError("Interval must be a list")
-        if type not in ["continuous","discrete"]:
-            raise ValueError("type must be either continous or discrete")
-        self.interval = interval
-        self.type = type
-
-    def toType(self,number):
-        if self.type == "continuous":
-            return number
-        else:
-            if number - int(number) <= 0.5:
-                return int(number)
-            else:
-                return int(number) + 1
-
-
-class Bounds:
-    def __init__(self,bounds):
-        self.bounds = bounds
-
-    def generate_samples(self,num_samples):
-        samples = [[bound.toType(np.random.uniform(bound.interval[0],bound.interval[1])) \
-                    for bound in self.bounds] \
-                    for i in range(num_samples)]
-        return np.array(samples)
-'''
-
 class Domain:
+    """
+    A class that describes the input space of the objectives.
 
+    Attributes
+    ----------
+
+    bounds : list
+        size : n_features.
+        List of tuples. Each tuple specifies a dimension of the input space.
+        A dimension in characterized by : lower bound, upper bound, type.
+        Type is either 'continuous' if the restriction of the input space to the
+        dimension is a continuous domain, or 'discrete'. discrete means a set of
+        integers spanning [lower bound, upper bound].
+        e.g. : [(-10,12,'continuous'),(2,10,'discrete')] if the objective has both
+        continuous and discrete hyperparameters.
+        Note that if the hyperparameters are discrete but not integers, you can
+        always transform them to integers.
+
+    Methods
+    -------
+
+    correctSample(sample)
+        Makes sure that the components of every point sampled respect the type
+        of the corresponding bound.
+
+    """
     def __init__(self,bounds):
-        '''
-        Domain is an object that has a list of tuples as attribute.
-        e.g. : [(-1,1,'continous'),(-2,1,'discrete')]
-        '''
+        """
+        Parameters
+        ----------
+
+        bounds : list
+            size : n_features.
+            List of tuples. Each tuple specifies a dimension of the input space.
+            A dimension in characterized by : lower bound, upper bound, type.
+            Type is either 'continuous' if the restriction of the input space to the
+            dimension is a continuous domain, or 'discrete'. discrete means a set of
+            integers spanning [lower bound, upper bound].
+            e.g. : [(-10,12,'continuous'),(2,10,'discrete')] if the objective has both
+            continuous and discrete hyperparameters.
+            Note that if the hyperparameters are discrete but not integers, you can
+            always transform them to integers.
+
+        Raises
+        ______
+
+        ValueError
+            If one of the bounds has a missing element.
+            If the lower bound of a bound is larger than the upper bound.
+            If the type is not 'continuous' or 'discrete'.
+        """
         for bound in bounds:
             if len(bound) != 3 :
                 raise ValueError("You forgot to specify a parameter")
@@ -50,7 +65,19 @@ class Domain:
 
     def correctSample(self,sample):
         '''
-        to document
+        Makes sure that the components of every point sampled respect the type
+        of the corresponding bound.
+
+        Parameters
+        ----------
+        sample : numpy.ndarray
+            the sample to correct
+
+        Returns
+        -------
+        numpy.ndarray
+            the same sample with corrected components.
+        
         '''
         corrected_sample = []
         for (x,type) in zip(sample,list(map(lambda x : x[2],self.bounds))):
@@ -59,9 +86,3 @@ class Domain:
             elif type == 'discrete':
                 corrected_sample.append(round(x))
         return corrected_sample
-
-    def genSamples(self,num_samples):
-        samples = [[np.random.uniform(bound[0],bound[1])\
-                    for bound in self.bounds] \
-                    for i in range(num_samples)]
-        return [self.correctSample(sample) for sample in samples]

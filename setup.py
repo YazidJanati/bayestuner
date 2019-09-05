@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="bayestuner",
-    version="1.0.2",
+    version="1.0.4",
     author="Yazid Janati El Idrissi",
     author_email="janati.yazid@gmail.com",
     description="A Bayesian Optimization Package",

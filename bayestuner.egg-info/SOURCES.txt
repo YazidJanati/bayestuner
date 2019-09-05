@@ -5,6 +5,7 @@ bayestuner/acquisitionfunc.py
 bayestuner/benchmark_functions.py
 bayestuner/bounds.py
 bayestuner/chooser.py
+bayestuner/initialization.py
 bayestuner/optimizer.py
 bayestuner/tests.py
 bayestuner/tuner.py

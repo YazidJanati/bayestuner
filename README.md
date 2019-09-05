@@ -3,6 +3,11 @@
 BayesTuner optimizes hyperparameters for machine learning algorithms.  It is suited for all sorts of problems.  
 The library is still in its early stage of development.
 
+To install:
+
+```
+pip install -i https://test.pypi.org/simple/ bayestuner
+```
 
 **Example:**
 

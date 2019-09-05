@@ -1,13 +1,13 @@
 import numpy as np
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern
 from sklearn.gaussian_process import GaussianProcessRegressor
-from acquisitionfunc import UCB, EI
-from optimizer import DifferentialEvolution,LBFGSB, OptimizerResult
-from chooser import MaxAcquisition
+from .acquisitionfunc import UCB, EI
+from .optimizer import DifferentialEvolution,LBFGSB, OptimizerResult
+from .chooser import MaxAcquisition
 import seaborn as sns
 import matplotlib.pyplot as plt
-from bounds import Domain
-from initialization import Normal,Uniform
+from .bounds import Domain
+from .initialization import Normal,Uniform
 import math
 
 class BayesTuner :
