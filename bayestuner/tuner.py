@@ -52,7 +52,7 @@ class BayesTuner :
         The default chooser is the one that chooses the maximum of the surrogate.
 
     initialization : Initialization, optional
-        The way you want to sample the initial points.
+        The distribution to sample from.
         Default is using the gaussian distribution.
 
     kernel : Kernel, optional
@@ -64,7 +64,7 @@ class BayesTuner :
         Larger values correspond to increased noise level in the observations.
         This can also prevent a potential numerical issue during fitting, by
         ensuring that the calculated values form a positive definite matrix.
-        Default : 1e-5.
+        Default : 1e-2.
 
     n_restarts : int, optional
         Number of restarts of the surrogate optimizer. Default : 5.
@@ -87,7 +87,7 @@ class BayesTuner :
                  chooser = MaxAcquisition(),
                  initialization = Uniform(),
                  kernel = ConstantKernel(1.0)*Matern(nu = 2.5),
-                 alpha = 1e-5,
+                 alpha = 1e-2,
                  n_restarts = 5):
         """
         Attributes
@@ -116,61 +116,58 @@ class BayesTuner :
         init_samples : int
             Onitial number of samples to use for the fitting of the gaussian process.
 
-        past_hyper : numpy.ndarray
+        past_hyper : array-like
             initial shape : (init_samples,n_features)
-            Contains all the points visited throughout the bayesian optimization of
-            the objective. It initially contains the first sampled points.
+            Contains all the hyperparemeters visited throughout the bayesian optimization of
+            the objective. It initially contains the first sampled hyperparemeters.
 
-        past_evals : numpy.ndarray
+        past_evals : array-like
             initial shape : (init_samples,1)
-            Contains the images of the points visited throughout the bayesian
-            optimization of the objective. Initially contains the images of the first
-            sampled points.
+            Contains the scores of the hyperparemeters visited throughout the bayesian
+            optimization of the objective. Initially contains the scores of the first
+            sampled hyperparemeters.
 
-        optimizer : Optimizer, optional
+        optimizer : Optimizer object, optional (default: LBFGSB)
             Optimizer to use for the maximization of the surrogate model.
             Available optimizers: 'L-BFGS-B' or 'DifferentialEvolution'
 
-        acquisition : AcquisitionFunc, optional
+        acquisition : AcquisitionFunc object, optional (default: UCB)
             The surrogate model.
             Available surrogates: 'Upper Confidence Bound' or 'ExpectedImprovement'.
             Default is 'Upper Confidence Bound' with beta_t = sqrt(log(t)).
 
-        chooser : Chooser, optional
+        chooser : Chooser, optional (default: MaxAcquisition )
             The way you choose the next point where you evaluate the objective.
-            The default chooser is the one that chooses the maximum of the surrogate.
 
-        initialization : Initialization, optional
-            The way you want to sample the initial points.
-            Default is using the gaussian distribution.
+        initialization : Initialization, optional (default: Normal)
+            The distribution to sample from.
 
-        kernel : Kernel, optional
+        kernel : Kernel, optional (default : ConstantKernel * Matern(nu = 2.5) )
             The kernel to use for the gaussian process regression.
-            Default is ConstantKernel * Matern(nu = 2.5)
 
-        alpha : float, optional
+        alpha : float, optional (default: 1e-2)
             Value added to the diagonal of the kernel matrix during fitting.
             Larger values correspond to increased noise level in the observations.
             This can also prevent a potential numerical issue during fitting, by
             ensuring that the calculated values form a positive definite matrix.
-            Default : 1e-5.
 
-        n_restarts : int, optional
-            Number of restarts of the surrogate optimizer. Default : 5.
+        n_restarts : int, optional (default: 5)
+            Number of restarts of the surrogate optimizer.
         """
 
-        self.domain       =   Domain(bounds)
-        self.objective    =   objective
-        self.n_iter       =   n_iter
-        self.init_samples =   init_samples
-        self.past_hyper   =   initialization.generate(self.domain,init_samples)
-        self.past_evals   =   np.array([objective(x) for x in self.past_hyper]).reshape(-1,1)
-        self.optimizer    =   optimizer
-        self.acquisition  =   acquisition
-        self.chooser      =   chooser
-        self.kernel       =   kernel
-        self.alpha        =   alpha
-        self.n_restarts   =   n_restarts
+        self.domain         =   Domain(bounds)
+        self.objective      =   objective
+        self.n_iter         =   n_iter
+        self.init_samples   =   init_samples
+        self.initialization =   initialization
+        self.past_hyper     =   initialization.generate(self.domain,init_samples)
+        self.past_evals     =   np.array([objective(x) for x in self.past_hyper]).reshape(-1,1)
+        self.optimizer      =   optimizer
+        self.acquisition    =   acquisition
+        self.chooser        =   chooser
+        self.kernel         =   kernel
+        self.alpha          =   alpha
+        self.n_restarts     =   n_restarts
 
     def tune(self,verbose = False):
         """
@@ -179,7 +176,7 @@ class BayesTuner :
         Parameters
         ----------
 
-        verbose : bool, optional
+        verbose : bool, optional (default: False)
             whether to print the current iteration, the chosen point, its image
             and the best point / image found yet.
 
@@ -188,10 +185,10 @@ class BayesTuner :
 
         OptimizerResult
             Object that contains relevant information about the optimization.
-            OptimizerResult.x to get the argmax
-            OptimizerResult.func_val to get the value of the maximum found.
-            OptimizerResult.PastEvals to get the visited points.
-            OptimizerResult.Scores to get the values of the visited points.
+            * OptimizerResult.x to get the argmax
+            * OptimizerResult.func_val to get the value of the maximum found.
+            * OptimizerResult.PastEvals to get the visited hyperparemeters.
+            * OptimizerResult.Scores to get the scores of the visited hyperparemeters.
         """
         gp = GaussianProcessRegressor(kernel = self.kernel,
                                       alpha = self.alpha,
