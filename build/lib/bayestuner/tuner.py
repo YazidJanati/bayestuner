@@ -8,7 +8,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from .bounds import Domain
 from .initialization import Normal,Uniform
+from scipy.optimize import differential_evolution
 import math
+import copy
+
 
 class BayesTuner :
     '''
@@ -168,6 +171,11 @@ class BayesTuner :
         self.kernel         =   kernel
         self.alpha          =   alpha
         self.n_restarts     =   n_restarts
+        self.gp             =   GaussianProcessRegressor(kernel = self.kernel,
+                                                         alpha = self.alpha,
+                                                         n_restarts_optimizer = 3,
+                                                         normalize_y = True).fit(self.past_hyper,self.past_evals)
+        self.gps            =   [copy.copy(self.gp)]
 
     def tune(self,verbose = False):
         """
@@ -190,16 +198,19 @@ class BayesTuner :
             * OptimizerResult.PastEvals to get the visited hyperparemeters.
             * OptimizerResult.Scores to get the scores of the visited hyperparemeters.
         """
-        gp = GaussianProcessRegressor(kernel = self.kernel,
-                                      alpha = self.alpha,
-                                      n_restarts_optimizer = self.n_restarts,
-                                      normalize_y = True)
+        '''def optimizer(obj_func, initial_theta, bounds):
+            obj = lambda theta : obj_func(theta,eval_gradient = False)
+            bounds = np.array([[0,7],[0,10]])
+            res = differential_evolution(obj,bounds)
+            theta_opt = res.x
+            func_min  = res.fun
+            return theta_opt, func_min'''
         idx_best_yet = np.argmax(self.past_evals)
         best_yet     = self.past_evals[idx_best_yet]
         for i in range(1,self.n_iter):
             next_eval = self.chooser.choose(self.acquisition(i),
                                 self.optimizer,
-                                gp,
+                                self.gp,
                                 self.domain,
                                 self.past_evals,
                                 self.n_restarts)
@@ -212,12 +223,38 @@ class BayesTuner :
 -> best score yet: {best_yet} \n")
             self.past_hyper = np.vstack((self.past_hyper,next_eval))
             self.past_evals = np.vstack((self.past_evals,score_next_eval))
-            gp.fit(self.past_hyper,self.past_evals)
+            self.gp.fit(self.past_hyper,self.past_evals)
+            self.gps.append(copy.copy(self.gp))
         idx_argmax = np.argmax(self.past_evals)
         argopt  = self.past_hyper[idx_argmax]
         optimum = self.past_evals[idx_argmax]
         result  = OptimizerResult(optimum,argopt,self.past_hyper,self.past_evals)
         return result
+
+    def supertuner(self,runs, verbose = False):
+        self.n_iter = runs[0]
+        self.tune(verbose)
+        for run in runs[1:-1]:
+            print(f'***New run: number of calls : {run}')
+            grid = [(bound[0],bound[1],bound[2]/2) for bound in self.domain.bounds]
+            self.domain = Domain(grid)
+            self.n_iter = run
+            self.tune(verbose)
+        idx_argmax = np.argmax(self.past_evals)
+        argopt  = self.past_hyper[idx_argmax]
+        last_domain = [(argopt_ - (bound[1]-bound[0])/5,argopt_ + (bound[1]-bound[0])/5,0) \
+                        for (argopt_,bound) in zip(argopt,self.domain.bounds)]
+        self.domain = Domain(last_domain)
+        self.n_iter = runs[-1]
+        self.tune(verbose)
+        idx_argmax = np.argmax(self.past_evals)
+        argopt  = self.past_hyper[idx_argmax]
+        optimum = self.past_evals[idx_argmax]
+        result  = OptimizerResult(optimum,argopt,self.past_hyper,self.past_evals)
+        return result
+
+
+
 
 
     '''def plot_progress(self):

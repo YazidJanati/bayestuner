@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: bayestuner
-Version: 1.0.4
+Version: 1.1.9
 Summary: A Bayesian Optimization Package
 Home-page: https://github.com/yazidjanati/bayestuner
 Author: Yazid Janati El Idrissi
@@ -11,6 +11,11 @@ Description: # Bayesian Optimization Library
         BayesTuner optimizes hyperparameters for machine learning algorithms.  It is suited for all sorts of problems.  
         The library is still in its early stage of development.
         
+        To install:
+        
+        ```
+        pip install -i https://test.pypi.org/simple/ bayestuner
+        ```
         
         **Example:**
         

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import math
 import numpy as np
+from scipy.optimize import differential_evolution
+
 
 class Chooser(ABC):
     '''

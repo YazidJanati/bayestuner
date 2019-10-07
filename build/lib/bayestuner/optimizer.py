@@ -102,7 +102,7 @@ class Optimizer(ABC):
 
 class DifferentialEvolution(Optimizer):
     """
-    The differential evolution algorithm. A good global optimizer but 
+    The differential evolution algorithm. A good global optimizer but
     """
     def optimize(self,acquisition,gp,domain,past_evals):
 
@@ -117,8 +117,6 @@ class LBFGSB(Optimizer):
     "The L-BFGS-B algorithm"
     def optimize(self,acquisition,gp,domain,past_evals):
         extracted_bounds = list(map(lambda x : [x[0],x[1]],domain.bounds))
-        next_loc   = None
-        min_surrog = math.inf
         def min_surrogate(x):
             return -acquisition.eval(x,gp,past_evals)
         return minimize(min_surrogate,

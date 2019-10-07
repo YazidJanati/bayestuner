@@ -55,11 +55,11 @@ class Domain:
         for bound in bounds:
             if len(bound) != 3 :
                 raise ValueError("You forgot to specify a parameter")
-            if bound[0] >= bound[1]:
+            '''if bound[0] >= bound[1]:
                 raise ValueError("Lower bound can't be bigger than upper bound")
             if bound[2] not in ['continuous','discrete']:
-                raise ValueError('Type of domain must be either continuous \
-                or discrete')
+                raise ValueError('Type of domain must be either continuous 
+                or discrete')'''
         self.bounds = bounds
 
 
@@ -77,12 +77,23 @@ class Domain:
         -------
         numpy.ndarray
             the same sample with corrected components.
-        
+
         '''
-        corrected_sample = []
+        #old version
+        '''corrected_sample = []
         for (x,type) in zip(sample,list(map(lambda x : x[2],self.bounds))):
             if type == 'continuous':
                 corrected_sample.append(x)
             elif type == 'discrete':
                 corrected_sample.append(round(x))
+        return corrected_sample'''
+        corrected_sample = []
+
+        for (x,lower_bound,step) in zip(sample,
+                                        list(map(lambda x: x[0],self.bounds)),
+                                        list(map(lambda x: x[2],self.bounds))):
+            if step == 0:
+                corrected_sample.append(x)
+            else:
+                corrected_sample.append(lower_bound + round((x - lower_bound)/step)*step)
         return corrected_sample
