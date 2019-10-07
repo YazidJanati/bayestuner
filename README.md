@@ -1,9 +1,9 @@
 # Bayesian Optimization Library
 
+<p align="center">
+    ![](https://media.giphy.com/media/RkFIJ5cZnjXAFwxXYQ/giphy.gif)
+</p>
 
-http://www.giphy.com/gifs/RkFIJ5cZnjXAFwxXYQ
-
-![](https://media.giphy.com/media/RkFIJ5cZnjXAFwxXYQ/giphy.gif)
 BayesTuner optimizes hyperparameters for machine learning algorithms.  It is suited for all sorts of problems.  
 The library is still in its early stage of development.
 
