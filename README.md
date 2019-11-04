@@ -1,5 +1,8 @@
 # Bayesian Optimization Library
 
+!! The library is still under construction !!
+
+Please refer to ``Bayesian Optimization.pdf`` to read more about my work and what the library contains.
 
 ![BayesTuner demonstration](https://media.giphy.com/media/RkFIJ5cZnjXAFwxXYQ/giphy.gif)
 
