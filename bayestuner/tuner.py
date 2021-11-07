@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern
+#from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern
+from .dkernels import dRBF, ConstantKernel, dMatern
 from sklearn.gaussian_process import GaussianProcessRegressor
 from .acquisitionfunc import UCB, EI
 from .optimizer import DifferentialEvolution,LBFGSB, OptimizerResult
@@ -86,10 +87,11 @@ class BayesTuner :
                  n_iter,
                  init_samples,
                  optimizer = LBFGSB(),
+                 optimizer_mle = "fmin_l_bfgs_b",
                  acquisition = lambda i : UCB(i, lambda x : np.log(x)),
                  chooser = MaxAcquisition(),
                  initialization = Uniform(),
-                 kernel = ConstantKernel(1.0)*Matern(nu = 2.5),
+                 kernel = ConstantKernel(1.0)*dMatern(nu = 2.5,hyperparam_type = ["continuous"]),
                  alpha = 1e-2,
                  n_restarts = 5):
         """
@@ -166,6 +168,7 @@ class BayesTuner :
         self.past_hyper     =   initialization.generate(self.domain,init_samples)
         self.past_evals     =   np.array([objective(x) for x in self.past_hyper]).reshape(-1,1)
         self.optimizer      =   optimizer
+        self.optimizer_mle  =   optimizer_mle
         self.acquisition    =   acquisition
         self.chooser        =   chooser
         self.kernel         =   kernel
@@ -174,6 +177,7 @@ class BayesTuner :
         self.gp             =   GaussianProcessRegressor(kernel = self.kernel,
                                                          alpha = self.alpha,
                                                          n_restarts_optimizer = 3,
+                                                         optimizer= self.optimizer_mle,
                                                          normalize_y = True).fit(self.past_hyper,self.past_evals)
         self.gps            =   [copy.copy(self.gp)]
 
